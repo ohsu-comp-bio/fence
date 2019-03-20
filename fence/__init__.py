@@ -182,7 +182,7 @@ def app_config(
         not app.config["LOGGER_HANDLER_POLICY"] == "always"
         and not app.config["LOGGER_HANDLER_POLICY"] == "debug"
     ):
-        logger.warn(
+        print(
             "LOGGER_HANDLER_POLICY neither 'always' nor 'debug'; logs will not print'"
         )
 
