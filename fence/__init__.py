@@ -1,11 +1,11 @@
 from collections import OrderedDict
+from logging import INFO, DEBUG
 import os
 
 from authutils.oauth2.client import OAuthClient
 import flask
 from flask_cors import CORS
 from flask_sqlalchemy_session import flask_scoped_session, current_session
-from cdislogging import get_stream_handler
 from userdatamodel.driver import SQLAlchemyDriver
 
 from fence.auth import logout, build_redirect_url
@@ -37,7 +37,7 @@ import fence.blueprints.well_known
 import fence.blueprints.link
 import fence.blueprints.google
 
-from cdislogging import get_logger
+from cdislogging import get_logger, get_stream_handler
 
 logger = get_logger(__name__)
 
@@ -176,7 +176,7 @@ def app_config(
     # app.debug should always be True bc we want at least INFO lvl logging in dev+prod
     # and flask 0.12 will set lvl to ERROR if app.debug is False
     app.debug = True
-    logger.level = 10 if config["DEBUG"] == True else 20
+    logger.level = DEBUG if config["DEBUG"] == True else INFO
 
     if (
         not app.config["LOGGER_HANDLER_POLICY"] == "always"
