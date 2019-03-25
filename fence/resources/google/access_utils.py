@@ -20,7 +20,7 @@ import fence
 from cdislogging import get_logger
 
 from fence.config import config
-from fence.errors import NotFound, NotSupported
+from fence.errors import NotFound, NotSupported, UserError
 from fence.models import (
     User,
     Project,
@@ -36,6 +36,7 @@ from fence.resources.google.utils import (
     get_monitoring_service_account_email,
     is_google_managed_service_account,
 )
+from fence.utils import get_valid_expiration_from_request
 
 logger = get_logger(__name__)
 
@@ -510,6 +511,7 @@ def patch_user_service_account(
         session, to_add, google_project_id, service_account
     )
     _revoke_user_service_account_from_db(session, to_delete, service_account)
+
     add_user_service_account_to_db(session, to_add, service_account)
 
 
@@ -782,6 +784,8 @@ def add_user_service_account_to_db(session, to_add_project_ids, service_account)
         sess(current_session): db session
         to_add_project_ids(List(int)): List of project id
         service_account(UserServiceAccount): user service account
+        requested_expires_in(int): requested time (in seconds) during which
+            the SA has bucket access
 
     Returns:
         None
@@ -799,10 +803,19 @@ def add_user_service_account_to_db(session, to_add_project_ids, service_account)
 
         access_groups = _get_google_access_groups(session, project_id)
 
-        # use configured time or 7 days
+        # timestamp at which the SA will lose bucket access
+        # by default: use configured time or 7 days
         expiration_time = int(time.time()) + config.get(
             "GOOGLE_USER_SERVICE_ACCOUNT_ACCESS_EXPIRES_IN", 604800
         )
+        requested_expires_in = (
+            get_valid_expiration_from_request()
+        )  # requested time (in seconds)
+        if requested_expires_in:
+            # convert it to timestamp
+            requested_expiration = int(time.time()) + requested_expires_in
+            expiration_time = min(expiration_time, requested_expiration)
+
         for access_group in access_groups:
             sa_to_group = ServiceAccountToGoogleBucketAccessGroup(
                 service_account_id=service_account.id,
@@ -882,10 +895,16 @@ def extend_service_account_access(service_account_email, db=None):
             service_account
         )
 
-        # use configured time or 7 days
+        # timestamp at which the SA will lose bucket access
+        # by default: use configured time or 7 days
         expiration_time = int(time.time()) + config.get(
             "GOOGLE_USER_SERVICE_ACCOUNT_ACCESS_EXPIRES_IN", 604800
         )
+        requested_expires_in = get_valid_expiration_from_request()
+        if requested_expires_in:
+            requested_expiration = int(time.time()) + requested_expires_in
+            expiration_time = min(expiration_time, requested_expiration)
+
         logger.debug(
             "Service Account ({}) access extended to {}.".format(
                 service_account.email, expiration_time
