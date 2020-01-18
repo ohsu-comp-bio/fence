@@ -53,7 +53,7 @@ class SynapseOauth2Client(Oauth2ClientBase):
         authorization_endpoint = self.get_value_from_discovery_doc(
             "authorization_endpoint", config["SYNAPSE_URI"] + "/oauth2/authorize"
         )
-
+        self.logger.debug(config["DREAM_CHALLENGE_TEAM"])
         claims = dict(
             id_token=dict(
                 team=dict(values=[config["DREAM_CHALLENGE_TEAM"]]),
@@ -126,6 +126,7 @@ class SynapseOauth2Client(Oauth2ClientBase):
                 else:
                     rv[claim] = value
             rv["fence_username"] = rv["email"] + " (via Synapse)"
+            self.logger.debug(rv)
             return rv
         except Exception as e:
             self.logger.exception("Can't get user info")

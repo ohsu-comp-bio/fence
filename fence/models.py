@@ -700,6 +700,9 @@ def migrate(driver):
     with driver.session as session:
         session.execute(
             """\
+BEGIN; -- start of transaction
+SELECT pg_advisory_xact_lock(2142616474639426746); -- random 64-bit signed ('bigint') lock number
+
 CREATE OR REPLACE FUNCTION process_user_audit() RETURNS TRIGGER AS $user_audit$
     BEGIN
         IF (TG_OP = 'DELETE') THEN
@@ -717,7 +720,10 @@ CREATE OR REPLACE FUNCTION process_user_audit() RETURNS TRIGGER AS $user_audit$
         END IF;
         RETURN NULL;
     END;
-$user_audit$ LANGUAGE plpgsql;"""
+$user_audit$ LANGUAGE plpgsql;
+
+COMMIT;
+"""
         )
 
         exist = session.scalar(

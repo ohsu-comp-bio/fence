@@ -7,6 +7,7 @@ from fence.models import Application, Certificate
 from fence.resources.user import send_mail, get_current_user_info
 from fence.config import config
 
+import logging
 
 REQUIRED_CERTIFICATES = {
     "AUP_COC_NDA": "documents needed for user e-sign",
@@ -46,6 +47,14 @@ def any_access():
     else:
         projects = flask.g.token["context"]["user"]["projects"]
 
+    logging.getLogger(__name__).info('projects')
+    logging.getLogger(__name__).info(projects)
+    logging.getLogger(__name__).info('token')
+    logging.getLogger(__name__).info(flask.g.token)
+    logging.getLogger(__name__).info('user')
+    logging.getLogger(__name__).info(flask.g.user)
+
+
     success = False
 
     if not project and len(projects) > 0:
@@ -58,6 +67,11 @@ def any_access():
     if success:
         resp = flask.make_response(flask.jsonify({"result": "success"}), 200)
         resp.headers["REMOTE_USER"] = flask.g.user.username
+        remote_roles = []
+        for project, v in projects.items():
+            for access in v:
+                remote_roles.append('{}.{}'.format(project, access))
+        resp.headers["REMOTE_ROLES"] = remote_roles
         return resp
     raise Unauthorized("Please login")
 
