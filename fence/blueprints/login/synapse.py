@@ -54,21 +54,6 @@ class SynapseCallback(DefaultOAuth2Callback):
                     datetime.now(timezone.utc)
                     + timedelta(seconds=config["SYNAPSE_AUTHZ_TTL"]),
                 )
-                logging.getLogger(__name__).debug('attempting arborist.auth_mapping')
-                auth_mapping = flask.current_app.arborist.auth_mapping(user.username)
-                logging.getLogger(__name__).debug(auth_mapping)
-                # recreate a facsimile of projects from
-                projects = {}
-                for resource_path, roles in auth_mapping.items():
-                  resource_path_parts = resource_path.split('/')
-                  program = resource_path_parts[2]
-                  name = program
-                  if len(resource_path_parts) == 5:
-                    project = resource_path_parts[4]
-                    name = "{}-{}".format(program, project)
-                  role_names = [role['method'] for role in roles]
-                  projects[name] = role_names
-                user.projects = projects
             else:
                 logging.getLogger(__name__).debug('attempting arborist.remove_user_from_group')
                 flask.current_app.arborist.remove_user_from_group(
