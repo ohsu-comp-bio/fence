@@ -57,6 +57,22 @@ def any_access():
 
     success = False
 
+    # recreate a facsimile of projects from auth_mapping
+    if len(projects) == 0:
+        logging.getLogger(__name__).debug('attempting arborist.auth_mapping')
+        auth_mapping = flask.current_app.arborist.auth_mapping(flask.g.user.username)
+        logging.getLogger(__name__).debug(auth_mapping)
+        projects = {}
+        for resource_path, permissions in auth_mapping.items():
+          # resource_path_parts = resource_path.split('/')
+          # program = resource_path_parts[2]
+          # name = program
+          # if len(resource_path_parts) == 5:
+          #   project = resource_path_parts[4]
+          #   name = "{}-{}".format(program, project)
+          method_names = [permission['method'] for permission in permissions]
+          projects[resource_path] = method_names
+
     if not project and len(projects) > 0:
         success = True
     elif project and project in projects:
@@ -70,7 +86,7 @@ def any_access():
         remote_roles = []
         for project, v in projects.items():
             for access in v:
-                remote_roles.append('{}.{}'.format(project, access))
+                remote_roles.append('{}/{}'.format(project, access))
         resp.headers["REMOTE_ROLES"] = remote_roles
         return resp
     raise Unauthorized("Please login")
