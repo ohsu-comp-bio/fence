@@ -31,7 +31,7 @@ class MicrosoftOauth2Client(Oauth2ClientBase):
             "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize",
         )
         uri, _ = self.session.create_authorization_url(
-            authorization_endpoint, prompt="login"
+            authorization_endpoint, prompt=self.settings.get("prompt", "login") 
         )
 
         return uri
