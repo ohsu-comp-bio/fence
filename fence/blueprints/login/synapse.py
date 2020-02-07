@@ -41,9 +41,6 @@ class SynapseCallback(DefaultOAuth2Callback):
         current_session.commit()
 
         with flask.current_app.arborist.context(authz_provider="synapse"):
-            logging.getLogger(__name__).debug(config["DREAM_CHALLENGE_TEAM"])
-            logging.getLogger(__name__).debug(config["DREAM_CHALLENGE_TEAM"].__class__)
-            logging.getLogger(__name__).debug(token_result)
             if str(config["DREAM_CHALLENGE_TEAM"]) in token_result.get("team", []):
                 logging.getLogger(__name__).debug('attempting arborist.create_user, arborist.add_user_to_group')
                 # make sure the user exists in Arborist
@@ -55,7 +52,6 @@ class SynapseCallback(DefaultOAuth2Callback):
                     + timedelta(seconds=config["SYNAPSE_AUTHZ_TTL"]),
                 )
             else:
-                logging.getLogger(__name__).debug('attempting arborist.remove_user_from_group')
                 flask.current_app.arborist.remove_user_from_group(
                     user.username, config["DREAM_CHALLENGE_GROUP"]
                 )
